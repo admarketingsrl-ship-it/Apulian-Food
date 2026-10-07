@@ -4,11 +4,13 @@ import { ArrowDown, Package, Scale, ShieldCheck } from 'lucide-react';
 interface HeroBannerProps {
   onScrollToCatalog: () => void;
   onOpenCart: () => void;
+  onScrollToPreconfiguredBoxes?: () => void;
 }
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({
   onScrollToCatalog,
   onOpenCart,
+  onScrollToPreconfiguredBoxes,
 }) => {
   return (
     <div className="relative py-12 md:py-16 border-b border-[#e5e0d8]">
@@ -68,20 +70,30 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {onScrollToPreconfiguredBoxes && (
+            <button
+              onClick={onScrollToPreconfiguredBoxes}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1a1816] hover:bg-[#332f2b] text-white text-xs font-medium tracking-wide transition-all cursor-pointer shadow-xs active:scale-98"
+            >
+              <Package className="w-3.5 h-3.5 stroke-[1.8] text-amber-300" />
+              <span>Confezioni Pronte (3 Fasce)</span>
+            </button>
+          )}
+
           <button
             onClick={onScrollToCatalog}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1a1816] hover:bg-[#332f2b] text-white text-xs font-medium tracking-wide transition-all cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-stone-800 hover:bg-stone-100 text-[#1a1816] text-xs font-medium tracking-wide transition-all cursor-pointer bg-white"
           >
-            <span>Esplora la Dispensa</span>
+            <span>Componi Pacco da Zero</span>
             <ArrowDown className="w-3.5 h-3.5 stroke-[1.8]" />
           </button>
 
           <button
             onClick={onOpenCart}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-stone-300 hover:border-black text-[#1a1816] text-xs font-medium tracking-wide transition-all cursor-pointer bg-white"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-stone-200 hover:border-stone-400 text-stone-600 hover:text-black text-xs font-medium tracking-wide transition-all cursor-pointer bg-transparent"
           >
-            <span>Vedi Pacco d'Esempio Già Pronto</span>
+            <span>Vedi Pacco in Preparazione</span>
           </button>
         </div>
       </div>

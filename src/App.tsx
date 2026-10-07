@@ -12,7 +12,7 @@ import {
   BOX_LIMITS,
   calculateShipping,
 } from './data/shipping';
-import { User, AdminOrder, DEMO_CUSTOMER, INITIAL_ORDERS } from './data/auth';
+import { User, AdminOrder, INITIAL_ORDERS } from './data/auth';
 import { Navbar } from './components/Navbar';
 import { HeroBanner } from './components/HeroBanner';
 import { BoxVisualizer } from './components/BoxVisualizer';
@@ -23,21 +23,27 @@ import { CustomSupplierModal } from './components/CustomSupplierModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ProductModal } from './components/ProductModal';
 import { AuthModal } from './components/AuthModal';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { RecipeSection } from './components/RecipeSection';
+import { RecipeModal } from './components/RecipeModal';
+import { PreconfiguredBoxesWidget } from './components/PreconfiguredBoxesWidget';
 import { Footer } from './components/Footer';
-import { RotateCcw, CheckCircle2, Shield, User as UserIcon } from 'lucide-react';
+import { Recipe } from './data/recipes';
+import { RotateCcw, CheckCircle2, Shield, User as UserIcon, Package } from 'lucide-react';
 
 export default function App() {
-  // 1. Authentication State (Customer & Admin)
+  // 1. Authentication State (No preset user by default as requested)
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('puglia_user');
-      return saved ? JSON.parse(saved) : DEMO_CUSTOMER;
+      return saved ? JSON.parse(saved) : null;
     } catch {
-      return DEMO_CUSTOMER;
+      return null;
     }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
 
   // 2. Admin Dashboard view toggle
   const [isAdminView, setIsAdminView] = useState(false);
@@ -63,6 +69,7 @@ export default function App() {
   const [isCustomSupplierOpen, setIsCustomSupplierOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState<Product | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
   // 8. Custom card note inside the box
   const [customNote, setCustomNote] = useState<string>(
@@ -136,8 +143,9 @@ export default function App() {
 
   // Cart operations
   const handleAddToCart = (product: Product) => {
-    if (totalWeight + product.weightKg > BOX_LIMITS.maxWeightKg) {
-      showToast(`⚠️ Attenzione: Aggiungere "${product.name}" supererebbe il limite di 15 kg!`);
+    const wouldExceed = totalWeight + product.weightKg > BOX_LIMITS.maxWeightKg;
+    if (wouldExceed) {
+      showToast(`⚠️ Limite peso (15 kg) superato! Impossibile aggiungere.`);
       return;
     }
 
@@ -151,35 +159,37 @@ export default function App() {
       return [...prev, { product, quantity: 1 }];
     });
 
-    showToast(`✓ Aggiunto al pacco: ${product.name}`);
+    showToast(`✓ Aggiunto: ${product.name}`);
   };
 
-  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
       handleRemoveItem(productId);
       return;
     }
 
-    const itemToUpdate = cart.find((i) => i.product.id === productId);
-    if (!itemToUpdate) return;
+    const currentItem = cart.find((item) => item.product.id === productId);
+    if (!currentItem) return;
 
-    // Check weight delta
-    const weightDelta = (newQuantity - itemToUpdate.quantity) * itemToUpdate.product.weightKg;
-    if (totalWeight + weightDelta > BOX_LIMITS.maxWeightKg) {
-      showToast(`⚠️ Impossibile aumentare: il pacco supererebbe i 15.00 kg consentiti!`);
-      return;
+    if (quantity > currentItem.quantity) {
+      const weightDiff = currentItem.product.weightKg * (quantity - currentItem.quantity);
+      if (totalWeight + weightDiff > BOX_LIMITS.maxWeightKg) {
+        showToast(`⚠️ Limite massimo di 15 kg raggiunto!`);
+        return;
+      }
     }
 
     setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity: newQuantity } : item
-      )
+      prev.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
     );
   };
 
   const handleRemoveItem = (productId: string) => {
-    setCart((prev) => prev.filter((i) => i.product.id !== productId));
-    showToast(`Prodotto rimosso dal pacco`);
+    const target = cart.find((i) => i.product.id === productId);
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+    if (target) {
+      showToast(`Rimosso: ${target.product.name}`);
+    }
   };
 
   const handleClearCart = () => {
@@ -205,6 +215,58 @@ export default function App() {
     }
   };
 
+  const handleScrollToRecipes = () => {
+    const el = document.getElementById('sezione-ricette');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollToPreconfiguredBoxes = () => {
+    const el = document.getElementById('confezioni-pronte');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollToShipping = () => {
+    const el = document.getElementById('calcolo-spedizione');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleLoadPreconfiguredBox = (
+    boxItems: { product: Product; quantity: number }[],
+    boxTitle: string
+  ) => {
+    setCart(boxItems.map((item) => ({ product: item.product, quantity: item.quantity })));
+    showToast(`✓ "${boxTitle}" caricato con successo nel tuo pacco!`);
+  };
+
+  const handleAddAllRecipeProducts = (productsToAdd: Product[]) => {
+    const addedWeight = productsToAdd.reduce((sum, p) => sum + p.weightKg, 0);
+    if (totalWeight + addedWeight > BOX_LIMITS.maxWeightKg) {
+      showToast(`⚠️ Impossibile aggiungere tutti: supererebbero il limite di 15 kg!`);
+      return;
+    }
+
+    setCart((prev) => {
+      const nextCart = [...prev];
+      for (const p of productsToAdd) {
+        const idx = nextCart.findIndex((item) => item.product.id === p.id);
+        if (idx >= 0) {
+          nextCart[idx] = { ...nextCart[idx], quantity: nextCart[idx].quantity + 1 };
+        } else {
+          nextCart.push({ product: p, quantity: 1 });
+        }
+      }
+      return nextCart;
+    });
+
+    showToast(`✓ Aggiunti ${productsToAdd.length} ingredienti al tuo pacco!`);
+  };
+
   // Auth Handlers
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
@@ -214,6 +276,30 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     showToast('Disconnessione effettuata');
+  };
+
+  // Admin access handler: requires credentials (admin / admin)
+  const handleOpenAdmin = () => {
+    if (currentUser?.role === 'admin') {
+      setIsAdminView(true);
+    } else {
+      setIsAdminLoginOpen(true);
+    }
+  };
+
+  const handleAdminLoginSuccess = () => {
+    const adminUser: User = {
+      id: 'usr-admin-master',
+      name: 'Amministratore PugliaInScatola',
+      email: 'admin@pugliainscatola.it',
+      avatar:
+        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+      role: 'admin',
+      provider: 'email',
+    };
+    setCurrentUser(adminUser);
+    setIsAdminView(true);
+    showToast('Accesso autorizzato come Amministratore');
   };
 
   // Admin handlers
@@ -266,7 +352,7 @@ export default function App() {
     <div className="min-h-screen bg-[#faf8f5] text-[#1a1816] flex flex-col font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#1a1816] text-white text-xs px-4 py-2.5 rounded-full shadow-lg border border-stone-800 flex items-center gap-2 animate-in slide-in-from-bottom duration-150">
+        <div className="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#1a1816] text-white text-xs px-4 py-2.5 rounded-full shadow-lg border border-stone-800 flex items-center gap-2 animate-in slide-in-from-bottom duration-150">
           <CheckCircle2 className="w-3.5 h-3.5 text-stone-300 shrink-0" />
           <span className="font-light">{toastMessage}</span>
         </div>
@@ -280,60 +366,70 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
-        onOpenAdmin={() => setIsAdminView(true)}
+        onOpenAdmin={handleOpenAdmin}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenCustomSupplier={() => setIsCustomSupplierOpen(true)}
+        onScrollToRecipes={handleScrollToRecipes}
+        onScrollToPreconfiguredBoxes={handleScrollToPreconfiguredBoxes}
+        onScrollToShipping={handleScrollToShipping}
       />
 
-      <main className="max-w-7xl mx-auto px-6 sm:px-8 py-8 flex-1 w-full space-y-12">
-        {/* Hero Banner with packaging criteria */}
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10 sm:space-y-14 flex-1 w-full pb-24 sm:pb-12">
+        {/* Hero Banner */}
         <HeroBanner
           onScrollToCatalog={handleScrollToCatalog}
           onOpenCart={() => setIsCartOpen(true)}
+          onScrollToPreconfiguredBoxes={handleScrollToPreconfiguredBoxes}
         />
 
-        {/* Quick Cart Actions Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-3 border-b border-[#e7e2d8] text-xs text-stone-500 font-light">
-          <div className="flex items-center gap-2">
-            <span className="text-stone-900 font-medium">Pacco d'esempio precaricato:</span>
-            <span>Olio EVO 3L, Orecchiette, Taralli, Capocollo, Cime di rapa, Biscotti Cegliesi ({totalWeight.toFixed(2)} kg).</span>
-          </div>
+        {/* Preconfigured Boxes Widget (3 Price Tiers) */}
+        <section id="confezioni-pronte">
+          <PreconfiguredBoxesWidget
+            products={products}
+            currentCart={cart}
+            onLoadBox={handleLoadPreconfiguredBox}
+            onOpenCart={() => setIsCartOpen(true)}
+          />
+        </section>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleResetSampleCart}
-              className="text-stone-600 hover:text-black underline transition-colors cursor-pointer"
-            >
-              Ripristina pacco d'esempio
-            </button>
-
-            {cart.length > 0 && (
-              <>
-                <span className="text-stone-300">·</span>
-                <button
-                  onClick={handleClearCart}
-                  className="text-stone-400 hover:text-red-700 transition-colors cursor-pointer"
-                >
-                  Svuota
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* 1. Box Visualizer (Live 50x50x50 cm, Max 15kg, Min 50€) */}
-        <section>
+        {/* Box Specs & Live Gauges */}
+        <section id="stato-pacco">
           <BoxVisualizer
             cart={cart}
             totalWeight={totalWeight}
             totalVolume={totalVolume}
             subtotal={subtotal}
             onOpenCart={() => setIsCartOpen(true)}
+            onScrollToShipping={handleScrollToShipping}
           />
         </section>
 
-        {/* 2. Instant Shipping Calculator (Couriers + Custom Supplier Hook) */}
+        {/* Apulian Delicacies Catalog */}
         <section>
+          <ProductCatalog
+            products={products}
+            cart={cart}
+            currentTotalWeight={totalWeight}
+            onAddToCart={handleAddToCart}
+            onUpdateQuantity={handleUpdateQuantity}
+            onOpenDetails={setSelectedProductDetails}
+          />
+        </section>
+
+        {/* Traditional Pugliese Recipes Section */}
+        <section>
+          <RecipeSection
+            products={products}
+            cart={cart}
+            currentTotalWeight={totalWeight}
+            onOpenRecipe={setSelectedRecipe}
+            onAddAllRecipeProducts={handleAddAllRecipeProducts}
+          />
+        </section>
+
+        {/* Shipping Cost Calculator & Courier Selection (Moved to bottom) */}
+        <section id="calcolo-spedizione">
           <ShippingCalculator
             providers={shippingProviders}
             selectedProviderId={selectedProviderId}
@@ -347,17 +443,20 @@ export default function App() {
           />
         </section>
 
-        {/* 3. Product Catalog with filters, search, and instant Add */}
-        <section>
-          <ProductCatalog
-            products={products}
-            cart={cart}
-            currentTotalWeight={totalWeight}
-            onAddToCart={handleAddToCart}
-            onUpdateQuantity={handleUpdateQuantity}
-            onOpenDetails={setSelectedProductDetails}
-          />
-        </section>
+        {/* Sample Cart Quick Reset */}
+        <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-[#e7e2d8] text-xs">
+          <div className="flex items-center gap-2 text-stone-500 font-light">
+            <span className="text-stone-700 font-medium">Composizione d'Esempio:</span>
+            <span>Taralli, Orecchiette, Olio EVO in Latta 3L, Capocollo e Dolci tipici precaricati.</span>
+          </div>
+          <button
+            onClick={handleResetSampleCart}
+            className="text-stone-700 hover:text-black font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ml-4 underline underline-offset-4 decoration-stone-300"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Ricarica Pacco Esempio</span>
+          </button>
+        </div>
       </main>
 
       {/* Cart Drawer */}
@@ -396,6 +495,17 @@ export default function App() {
         canAdd={selectedProductDetails ? totalWeight + selectedProductDetails.weightKg <= BOX_LIMITS.maxWeightKg : true}
       />
 
+      {/* Recipe Details Modal */}
+      <RecipeModal
+        recipe={selectedRecipe}
+        products={products}
+        cart={cart}
+        currentTotalWeight={totalWeight}
+        onClose={() => setSelectedRecipe(null)}
+        onAddToCart={handleAddToCart}
+        onAddAllRecipeProducts={handleAddAllRecipeProducts}
+      />
+
       {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
@@ -409,16 +519,50 @@ export default function App() {
         onOrderSuccess={handleOrderSuccess}
       />
 
-      {/* Auth Modal (Social & Email Login) */}
+      {/* Auth Modal (Customer Registration & Login) */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
-        onOpenAdminDirectly={() => {
+        onOpenAdminLogin={() => {
           setIsAuthModalOpen(false);
-          setIsAdminView(true);
+          setIsAdminLoginOpen(true);
         }}
       />
+
+      {/* Admin Login Modal (admin / admin credentials explicitly required) */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        onSuccess={handleAdminLoginSuccess}
+      />
+
+      {/* Mobile Floating Sticky Bar for Smartphone Ergonomics */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#1c1a17]/95 backdrop-blur-md text-white px-4 py-2.5 border-t border-stone-800 flex items-center justify-between shadow-2xl">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="text-stone-400">Peso:</span>
+            <span className={`font-mono font-bold ${totalWeight > 15 ? 'text-red-400' : 'text-stone-100'}`}>
+              {totalWeight.toFixed(2)}/15kg
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-serif text-base font-semibold">€{subtotal.toFixed(2)}</span>
+            <span className={`text-[10px] ${subtotal >= 50 ? 'text-emerald-400' : 'text-amber-300'}`}>
+              {subtotal >= 50 ? 'min. 50€ ✓' : `mancano €${(50 - subtotal).toFixed(2)}`}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className="px-4 py-2 bg-white text-stone-950 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 shadow-sm cursor-pointer"
+        >
+          <Package className="w-3.5 h-3.5 stroke-[2]" />
+          <span>Vedi Pacco ({totalItemCount})</span>
+        </button>
+      </div>
 
       {/* Footer */}
       <Footer />

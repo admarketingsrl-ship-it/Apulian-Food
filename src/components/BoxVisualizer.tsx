@@ -1,7 +1,8 @@
 import React from 'react';
-import { Package, Scale, ArrowRight, ShieldCheck, Check } from 'lucide-react';
+import { Package, Scale, ArrowRight, ArrowDown, ShieldCheck, Check, Truck } from 'lucide-react';
 import { CartItem } from '../data/products';
 import { BOX_LIMITS } from '../data/shipping';
+import { FALLBACK_FOOD_IMAGE } from '../data/assets';
 
 interface BoxVisualizerProps {
   cart: CartItem[];
@@ -9,6 +10,7 @@ interface BoxVisualizerProps {
   totalVolume: number;
   subtotal: number;
   onOpenCart: () => void;
+  onScrollToShipping?: () => void;
 }
 
 export const BoxVisualizer: React.FC<BoxVisualizerProps> = ({
@@ -17,6 +19,7 @@ export const BoxVisualizer: React.FC<BoxVisualizerProps> = ({
   totalVolume,
   subtotal,
   onOpenCart,
+  onScrollToShipping,
 }) => {
   const isWeightOver = totalWeight > BOX_LIMITS.maxWeightKg;
   const isMinSpendMet = subtotal >= BOX_LIMITS.minOrderEuro;
@@ -42,13 +45,25 @@ export const BoxVisualizer: React.FC<BoxVisualizerProps> = ({
           </h2>
         </div>
 
-        <button
-          onClick={onOpenCart}
-          className="self-start sm:self-auto text-xs text-stone-600 hover:text-black font-medium transition-colors flex items-center gap-1.5 cursor-pointer underline underline-offset-4 decoration-stone-300"
-        >
-          <span>Gestisci {totalItemsCount} articoli nel pacco</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {onScrollToShipping && (
+            <button
+              onClick={onScrollToShipping}
+              className="self-start sm:self-auto text-xs text-stone-600 hover:text-black font-medium transition-colors flex items-center gap-1.5 cursor-pointer underline underline-offset-4 decoration-stone-300"
+            >
+              <Truck className="w-3.5 h-3.5 text-stone-500" />
+              <span>Preventivo spedizione corrieri ↓</span>
+            </button>
+          )}
+
+          <button
+            onClick={onOpenCart}
+            className="self-start sm:self-auto text-xs text-stone-600 hover:text-black font-medium transition-colors flex items-center gap-1.5 cursor-pointer underline underline-offset-4 decoration-stone-300"
+          >
+            <span>Gestisci {totalItemsCount} articoli nel pacco</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* 3 Core Gauges - Minimal & Clean */}
@@ -166,6 +181,10 @@ export const BoxVisualizer: React.FC<BoxVisualizerProps> = ({
                       alt={item.product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_FOOD_IMAGE;
+                      }}
                     />
                     <span className="absolute bottom-1 right-1 bg-black/75 text-white text-[10px] font-mono px-1.5 py-0.2 rounded">
                       ×{item.quantity}

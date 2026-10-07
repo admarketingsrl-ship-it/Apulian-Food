@@ -34,6 +34,45 @@ export interface AdminOrder {
   hasRefrigerated: boolean;
 }
 
+// Credentials for Admin Access explicitly specified by user:
+// admin nome_utente
+// admin password
+export const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'admin',
+} as const;
+
+export interface RegisteredAccount extends User {
+  passwordHash?: string;
+}
+
+// Local storage helpers for registered users
+const STORAGE_KEY_REGISTERED_USERS = 'puglia_registered_users';
+
+export function getRegisteredUsers(): RegisteredAccount[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_REGISTERED_USERS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRegisteredUser(account: RegisteredAccount): void {
+  try {
+    const users = getRegisteredUsers();
+    const existingIndex = users.findIndex(u => u.email.toLowerCase() === account.email.toLowerCase());
+    if (existingIndex >= 0) {
+      users[existingIndex] = account;
+    } else {
+      users.push(account);
+    }
+    localStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(users));
+  } catch (e) {
+    console.error('Failed to save registered user', e);
+  }
+}
+
 export const INITIAL_ORDERS: AdminOrder[] = [
   {
     id: 'ord-101',
@@ -44,36 +83,36 @@ export const INITIAL_ORDERS: AdminOrder[] = [
     destination: 'Milano (MI) - Via Tortona 24',
     courierName: 'BRT Bartolini Espresso',
     trackingCode: 'PUG-BRT-99201481',
-    totalWeightKg: 6.77,
-    totalVolumeLiters: 11.7,
+    totalWeightKg: 6.46,
+    totalVolumeLiters: 11.2,
     itemsCount: 8,
-    subtotal: 89.10,
-    shippingCost: 10.95,
-    grandTotal: 100.05,
+    subtotal: 83.50,
+    shippingCost: 10.75,
+    grandTotal: 94.25,
     status: 'in_preparazione',
-    itemsSummary: 'Olio EVO 3L, Orecchiette x2, Taralli x2, Cime di Rapa, Capocollo, Caciocavallo',
-    customNote: 'Con tanto affetto da Bari! Goditi i veri sapori di Puglia per gli esami a Milano.',
-    hasRefrigerated: true,
+    itemsSummary: 'Olio EVO 3L, Orecchiette x2, Taralli x2, Capocollo, Cime di Rapa, Biscotti Cegliesi',
+    customNote: 'Con tanto affetto dalla Puglia! Goditi i veri sapori di casa per gli esami.',
+    hasRefrigerated: false,
   },
   {
     id: 'ord-102',
     orderNumber: 'PUG-2026-8839',
     createdAt: 'Ieri, 16:40',
-    customerName: 'Giulia De Santis',
-    customerEmail: 'giulia.ds@example.com',
-    destination: 'Torino (TO) - Corso Francia 112',
-    courierName: 'GLS Express Safe Food',
-    trackingCode: 'PUG-GLS-44182901',
-    totalWeightKg: 11.40,
-    totalVolumeLiters: 16.5,
-    itemsCount: 12,
-    subtotal: 134.50,
-    shippingCost: 14.34,
-    grandTotal: 148.84,
+    customerName: 'Claire Laurent',
+    customerEmail: 'claire.laurent@gmail.com',
+    destination: 'Parigi (Francia) - Rue de Rivoli 14',
+    courierName: 'DHL Express Food Line',
+    trackingCode: 'PUG-DHL-44182901',
+    totalWeightKg: 11.20,
+    totalVolumeLiters: 15.4,
+    itemsCount: 10,
+    subtotal: 128.50,
+    shippingCost: 28.40,
+    grandTotal: 156.90,
     status: 'spedito',
-    itemsSummary: 'Burrata x2, Primitivo DOC x2, Orecchiette Arse x4, Taralli Finocchietto x4',
-    customNote: 'Per il pranzo della domenica con i colleghi. Fagli sentire cosa significa mangiare pugliese!',
-    hasRefrigerated: true,
+    itemsSummary: 'Olio EVO 5L, Canestrato DOP x2, Caciocavallo Podolico x2, Taralli Cipolla x4',
+    customNote: 'Un assaggio autentico di Puglia a Parigi!',
+    hasRefrigerated: false,
   },
   {
     id: 'ord-103',
@@ -91,32 +130,8 @@ export const INITIAL_ORDERS: AdminOrder[] = [
     shippingCost: 8.60,
     grandTotal: 66.80,
     status: 'consegnato',
-    itemsSummary: 'Friselle Salentine x2, Pomodori secchi x2, Olio Grottaglie 500ml',
+    itemsSummary: 'Friselle Salentine x2, Pomodori secchi x2, Sughetto Manduria x2',
     customNote: 'Un assaggio di Salento per la casa nuova.',
     hasRefrigerated: false,
   },
 ];
-
-export const DEMO_CUSTOMER: User = {
-  id: 'usr-demo-1',
-  name: 'Marco Antonacci',
-  email: 'marco.antonacci@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-  role: 'customer',
-  provider: 'google',
-  address: {
-    street: 'Via Tortona 24',
-    city: 'Milano (MI)',
-    postalCode: '20144',
-    phone: '+39 340 123 4567',
-  },
-};
-
-export const DEMO_ADMIN: User = {
-  id: 'usr-admin-1',
-  name: 'Domenico Antonacci (Admin Puglia)',
-  email: 'domenicoantonacci@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-  role: 'admin',
-  provider: 'google',
-};

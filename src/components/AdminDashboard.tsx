@@ -14,6 +14,7 @@ import {
 import { Product, CATEGORIES } from '../data/products';
 import { ShippingProvider, BOX_LIMITS } from '../data/shipping';
 import { AdminOrder } from '../data/auth';
+import { ASSET_IMAGES, FALLBACK_FOOD_IMAGE } from '../data/assets';
 
 interface AdminDashboardProps {
   products: Product[];
@@ -52,7 +53,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newVolume, setNewVolume] = useState('1.0');
   const [newOrigin, setNewOrigin] = useState('Bari (BA)');
   const [newDescription, setNewDescription] = useState('');
-  const [newImage, setNewImage] = useState('/src/assets/images/taralli_pugliesi_1791396905776.jpg');
+  const [newImage, setNewImage] = useState<string>(ASSET_IMAGES.taralliPugliesi);
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.grandTotal, 0);
   const totalDispatchedWeight = orders.reduce((sum, o) => sum + o.totalWeightKg, 0);
@@ -339,6 +340,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             alt={p.name}
                             className="w-9 h-9 rounded-lg object-cover border border-stone-100"
                             referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_FOOD_IMAGE;
+                            }}
                           />
                           <div>
                             <span className="font-medium text-stone-900 block line-clamp-1">{p.name}</span>

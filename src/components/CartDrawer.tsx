@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ArrowRight, MessageSquare } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ArrowRight, MessageSquare, AlertCircle } from 'lucide-react';
 import { CartItem } from '../data/products';
 import { BOX_LIMITS, ShippingCalculation } from '../data/shipping';
+import { FALLBACK_FOOD_IMAGE } from '../data/assets';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -45,10 +46,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const grandTotal = subtotal + shippingCalc.totalShippingCost;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-2xs flex justify-end">
-      <div className="relative w-full max-w-lg bg-[#faf8f5] h-full shadow-2xl flex flex-col border-l border-[#e7e2d8] animate-in slide-in-from-right duration-300">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-xs flex justify-end">
+      <div className="relative w-full max-w-full sm:max-w-md bg-[#faf8f5] h-full shadow-2xl flex flex-col border-l border-[#e7e2d8] animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[#e7e2d8] flex items-center justify-between shrink-0 bg-white">
+        <div className="px-5 py-4 border-b border-[#e7e2d8] flex items-center justify-between shrink-0 bg-white">
           <div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-medium">
               Scatola 50 × 50 × 50 cm
@@ -61,62 +62,79 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <div className="flex items-center gap-3">
             {cart.length > 0 && (
               <button
+                type="button"
                 onClick={onClearCart}
-                className="text-[11px] text-stone-400 hover:text-black transition-colors underline cursor-pointer"
+                className="text-xs text-stone-400 hover:text-black transition-colors underline cursor-pointer"
               >
                 Svuota
               </button>
             )}
             <button
+              type="button"
               onClick={onClose}
-              className="p-1 text-stone-400 hover:text-black transition-colors cursor-pointer"
+              className="p-1.5 text-stone-400 hover:text-black transition-colors cursor-pointer rounded-lg hover:bg-stone-100"
+              aria-label="Chiudi carrello"
             >
-              <X className="w-5 h-5 stroke-[1.5]" />
+              <X className="w-5 h-5 stroke-[1.8]" />
             </button>
           </div>
         </div>
 
-        {/* Minimal Gauges Status Bar */}
-        <div className="px-6 py-3 border-b border-[#e7e2d8] flex items-center justify-between text-xs text-stone-600 bg-[#f5f2ea]/60">
+        {/* Status Bar */}
+        <div className="px-5 py-2.5 border-b border-[#e7e2d8] flex items-center justify-between text-xs text-stone-600 bg-[#f5f2ea]/70">
           <div>
-            <span className="text-[10px] uppercase tracking-[0.16em] text-stone-400 block">Peso</span>
-            <span className={`font-mono ${isWeightOver ? 'text-red-700 font-bold' : 'text-stone-900'}`}>
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 block">Peso</span>
+            <span className={`font-mono font-semibold ${isWeightOver ? 'text-red-700 font-bold' : 'text-stone-900'}`}>
               {totalWeight.toFixed(2)} / 15 kg
             </span>
           </div>
           <span className="text-stone-300">·</span>
           <div>
-            <span className="text-[10px] uppercase tracking-[0.16em] text-stone-400 block">Volume</span>
-            <span className="font-mono text-stone-900">
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 block">Volume</span>
+            <span className="font-mono text-stone-900 font-semibold">
               {totalVolume.toFixed(1)} / 95L
             </span>
           </div>
           <span className="text-stone-300">·</span>
           <div>
-            <span className="text-[10px] uppercase tracking-[0.16em] text-stone-400 block">Soglia</span>
-            <span className={isMinSpendMet ? 'text-emerald-800 font-medium' : 'text-stone-600'}>
-              {isMinSpendMet ? 'Raggiunta ✓' : `Mancano €${missingEuro.toFixed(2)}`}
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 block">Min. 50€</span>
+            <span className={isMinSpendMet ? 'text-emerald-800 font-semibold' : 'text-amber-800 font-semibold'}>
+              {isMinSpendMet ? 'Raggiunto ✓' : `-€${missingEuro.toFixed(2)}`}
             </span>
           </div>
         </div>
 
+        {/* Warning messages */}
+        {isWeightOver && (
+          <div className="px-5 py-2.5 bg-red-50 text-red-700 text-xs flex items-center gap-2 border-b border-red-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>Hai superato il limite di 15 kg. Riduci la quantità di alcuni prodotti.</span>
+          </div>
+        )}
+
         {/* Item List */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
           {cart.length === 0 ? (
-            <div className="py-20 text-center text-stone-400 text-xs font-light">
-              Il pacco è vuoto.
+            <div className="py-24 text-center text-stone-400 text-xs font-light">
+              Il tuo pacco da giù è vuoto.
+              <br />
+              Seleziona le eccellenze dal catalogo per iniziare!
             </div>
           ) : (
             cart.map((item) => (
               <div
                 key={item.product.id}
-                className="bg-white rounded-xl p-3.5 border border-[#e7e2d8] flex items-center gap-3"
+                className="bg-white rounded-xl p-3 border border-[#e7e2d8] flex items-center gap-3 shadow-2xs"
               >
                 <img
                   src={item.product.image}
                   alt={item.product.name}
-                  className="w-16 h-16 rounded-lg object-cover shrink-0 border border-stone-100"
+                  className="w-16 h-16 rounded-lg object-cover shrink-0 border border-stone-100 bg-[#f3efe8]"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = FALLBACK_FOOD_IMAGE;
+                  }}
                 />
 
                 <div className="flex-1 min-w-0">
@@ -125,38 +143,44 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       {item.product.name}
                     </h4>
                     <button
+                      type="button"
                       onClick={() => onRemoveItem(item.product.id)}
-                      className="text-stone-300 hover:text-stone-800 p-0.5 transition-colors cursor-pointer"
+                      className="text-stone-300 hover:text-red-700 p-1 transition-colors cursor-pointer"
+                      title="Elimina"
                     >
-                      <Trash2 className="w-3.5 h-3.5 stroke-[1.5]" />
+                      <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
                     </button>
                   </div>
 
                   <p className="text-[11px] text-stone-400 truncate mt-0.5">
-                    {item.product.origin}
+                    {item.product.origin} · {(item.product.weightKg * item.quantity).toFixed(2)} kg
                   </p>
 
                   <div className="flex items-center justify-between mt-2 pt-1 border-t border-stone-50">
-                    <div className="flex items-center gap-1.5 border border-stone-200 rounded-md p-0.5">
+                    <div className="flex items-center gap-1.5 border border-stone-200 rounded-lg p-0.5 bg-stone-50">
                       <button
+                        type="button"
                         onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
-                        className="w-5 h-5 flex items-center justify-center text-stone-600 hover:bg-stone-100 text-xs"
+                        className="w-7 h-7 flex items-center justify-center text-stone-700 bg-white rounded hover:bg-stone-100 text-xs shadow-2xs font-bold"
+                        aria-label="Diminuisci"
                       >
-                        <Minus className="w-2.5 h-2.5" />
+                        <Minus className="w-3 h-3" />
                       </button>
-                      <span className="font-mono text-xs px-1 text-stone-900 font-medium">
+                      <span className="font-mono text-xs px-2 text-stone-900 font-semibold min-w-5 text-center">
                         {item.quantity}
                       </span>
                       <button
+                        type="button"
                         onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
                         disabled={totalWeight + item.product.weightKg > BOX_LIMITS.maxWeightKg}
-                        className="w-5 h-5 flex items-center justify-center text-stone-600 hover:bg-stone-100 text-xs disabled:opacity-30"
+                        className="w-7 h-7 flex items-center justify-center text-stone-700 bg-white rounded hover:bg-stone-100 text-xs shadow-2xs font-bold disabled:opacity-30"
+                        aria-label="Aumenta"
                       >
-                        <Plus className="w-2.5 h-2.5" />
+                        <Plus className="w-3 h-3" />
                       </button>
                     </div>
 
-                    <span className="font-serif text-sm font-medium text-stone-900">
+                    <span className="font-serif text-sm font-semibold text-stone-900">
                       €{(item.product.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
@@ -166,9 +190,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           )}
 
           {/* Dedication Card */}
-          <div className="p-4 rounded-xl border border-[#e7e2d8] bg-white text-xs space-y-2">
+          <div className="p-3.5 rounded-xl border border-[#e7e2d8] bg-white text-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-stone-400 font-medium flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-stone-400 font-medium flex items-center gap-1.5">
                 <MessageSquare className="w-3 h-3 text-stone-400" />
                 Dedica nel Pacco
               </span>
@@ -186,7 +210,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <textarea
                   value={customNote}
                   onChange={(e) => onChangeCustomNote(e.target.value)}
-                  placeholder="Scrivi qui la dedica che stamperemo su carta pergamena dentro la scatola..."
+                  placeholder="Scrivi la dedica affettuosa che stamperemo dentro la scatola..."
                   rows={2}
                   className="w-full text-xs p-2.5 rounded-lg border border-stone-200 focus:outline-none focus:border-black font-light"
                 />
@@ -211,10 +235,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         </div>
 
         {/* Footer & Checkout */}
-        <div className="p-6 bg-white border-t border-[#e7e2d8] shrink-0 space-y-3">
+        <div className="p-4 sm:p-5 bg-white border-t border-[#e7e2d8] shrink-0 space-y-3">
           <div className="space-y-1.5 text-xs text-stone-500 font-light">
             <div className="flex justify-between">
-              <span>Prodotti:</span>
+              <span>Prodotti nel pacco:</span>
               <span className="font-serif text-stone-900 font-medium">€{subtotal.toFixed(2)}</span>
             </div>
 
@@ -226,17 +250,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
 
             <div className="flex justify-between items-baseline pt-2 border-t border-stone-100 text-sm">
-              <span className="text-stone-900 font-normal">Totale Pacco:</span>
-              <span className="font-serif text-2xl font-normal text-stone-900">
+              <span className="text-stone-900 font-medium">Totale Finale:</span>
+              <span className="font-serif text-2xl font-semibold text-stone-900">
                 €{grandTotal.toFixed(2)}
               </span>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onProceedToCheckout}
             disabled={!canCheckout}
-            className="w-full py-3 rounded-full bg-[#1a1816] hover:bg-[#332f2b] text-white text-xs font-medium tracking-wide transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-[#1a1816] hover:bg-[#332f2b] text-white text-xs font-semibold tracking-wide transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
           >
             <span>Procedi all'Ordine</span>
             <ArrowRight className="w-3.5 h-3.5" />

@@ -29,11 +29,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onOrderSuccess,
 }) => {
   const [step, setStep] = useState<'details' | 'success'>('details');
-  const [recipientName, setRecipientName] = useState(currentUser?.name || 'Marco Antonacci');
-  const [address, setAddress] = useState(currentUser?.address?.street || 'Via Tortona 24');
-  const [city, setCity] = useState(currentUser?.address?.city || 'Milano (MI)');
-  const [postalCode, setPostalCode] = useState(currentUser?.address?.postalCode || '20144');
-  const [phone, setPhone] = useState(currentUser?.address?.phone || '+39 340 123 4567');
+  const [recipientName, setRecipientName] = useState(currentUser?.name || '');
+  const [address, setAddress] = useState(currentUser?.address?.street || '');
+  const [city, setCity] = useState(currentUser?.address?.city || '');
+  const [postalCode, setPostalCode] = useState(currentUser?.address?.postalCode || '');
+  const [phone, setPhone] = useState(currentUser?.address?.phone || '');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'satispay' | 'paypal'>('card');
   const [trackingNumber, setTrackingNumber] = useState('');
 
