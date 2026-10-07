@@ -1,0 +1,6 @@
+{
+  "name": "PugliaInScatola - Pacco Pugliese Eccellenze & Spedizioni",
+  "description": "Componi il tuo Pacco Pugliese (50x50x50 cm, max 15kg, min 50€) con eccellenze tipiche pugliesi, calcolo peso, volume e preventivo spedizione corriere in tempo reale.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
