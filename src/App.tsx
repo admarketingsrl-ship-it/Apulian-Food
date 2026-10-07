@@ -33,11 +33,24 @@ import { Recipe } from './data/recipes';
 import { RotateCcw, CheckCircle2, Shield, User as UserIcon, Package } from 'lucide-react';
 
 export default function App() {
-  // 1. Authentication State (No preset user by default as requested)
+  // 1. Authentication State (No preset user by default as requested; purge legacy Marco Antonacci)
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('puglia_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          !parsed ||
+          parsed.name?.toLowerCase().includes('marco') ||
+          parsed.email?.toLowerCase().includes('marco') ||
+          parsed.name?.toLowerCase().includes('antonacci')
+        ) {
+          localStorage.removeItem('puglia_user');
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }

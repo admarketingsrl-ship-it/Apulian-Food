@@ -52,7 +52,20 @@ const STORAGE_KEY_REGISTERED_USERS = 'puglia_registered_users';
 export function getRegisteredUsers(): RegisteredAccount[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_REGISTERED_USERS);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed: RegisteredAccount[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Ensure no legacy pre-set Marco user persists
+    const cleaned = parsed.filter(
+      (u) =>
+        !u.name?.toLowerCase().includes('marco') &&
+        !u.email?.toLowerCase().includes('marco') &&
+        !u.name?.toLowerCase().includes('antonacci')
+    );
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY_REGISTERED_USERS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -78,8 +91,8 @@ export const INITIAL_ORDERS: AdminOrder[] = [
     id: 'ord-101',
     orderNumber: 'PUG-2026-8841',
     createdAt: 'Oggi, 10:15',
-    customerName: 'Marco Antonacci',
-    customerEmail: 'marco.antonacci@example.com',
+    customerName: 'Giovanni De Santis',
+    customerEmail: 'giovanni.desantis@example.com',
     destination: 'Milano (MI) - Via Tortona 24',
     courierName: 'BRT Bartolini Espresso',
     trackingCode: 'PUG-BRT-99201481',
